@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Add a comment to a Jira issue"
+inputs:
+  issue_key: "{{issue_key}}"     # The Jira issue key (e.g., BTS-123)
+  comment: "{{comment}}"         # The comment text to add
+
+outputs:
+  comment_id: ""  # The ID of the created comment
+
+commands:
+  # Validate inputs
+  - if ([string]::IsNullOrEmpty("{{issue_key}}")) { throw "Issue key is required" }
+  - if ([string]::IsNullOrEmpty("{{comment}}")) { throw "Comment text is required" }
+  
+  # Setup authentication
+  - $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("${env:JIRA_EMAIL}:${env:JIRA_TOKEN}")))
+  - $Headers = @{ Authorization = "Basic $base64AuthInfo" }
+  
+  # Prepare comment payload
+  - $Body = @{
+      body = "{{comment}}"
+    } | ConvertTo-Json
+  
+  # Add comment to issue
+  - try {
+      $response = Invoke-RestMethod -Uri "${config.jira.url}/rest/api/2/issue/{{issue_key}}/comment" -Method Post -Headers $Headers -Body $Body -ContentType "application/json"
+      
+      Write-Host "Successfully added comment to issue {{issue_key}}"
+      @{ comment_id = $response.id }
+    }
+    catch {
+      Write-Error "Failed to add comment: $_"
+      throw
+    }

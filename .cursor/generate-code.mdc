@@ -1,0 +1,68 @@
+---
+description: "Intelligently append methods to existing interface & impl classes"
+globs: 
+alwaysApply: false
+---
+---
+description: "Generate code based on API requirements and Elasticsearch index"
+inputs:
+  usecase: "{{usecase}}"        # Feature being developed
+  issue_key: "{{issue_key}}"    # Jira issue key
+  requirements: "{{requirements}}"  # Feature requirements in structured format
+
+outputs:
+  generated_files: files        # List of generated/updated files
+
+steps:
+  1. Generate API specification and queries
+     - Build API spec (build-api-template.mdc -> .cursor/resources/{{usecase}}/api-spec.mdc)
+     - Build Elastic query (build-elastic-query.mdc -> .cursor/resources/{{usecase}}/elastic-query.mdc)
+
+  2. Generate code based on specifications
+     commands:
+       # Initialize code generation
+       - codegen init --spec .cursor/resources/{{usecase}}/api-spec.mdc --query .cursor/resources/{{usecase}}/elastic-query.mdc
+
+       # Generate Entity classes
+       - codegen entity \
+           --from-spec .cursor/resources/{{usecase}}/api-spec.mdc \
+           --package "{{config.package}}.entity"
+
+       # Generate Model classes
+       - codegen model \
+           --from-spec .cursor/resources/{{usecase}}/api-spec.mdc \
+           --package "{{config.package}}.model"
+
+       # Generate Repository layer
+       - codegen repository \
+           --entity "{{entity}}" \
+           --query-file .cursor/resources/{{usecase}}/elastic-query.mdc \
+           --package "{{config.package}}.repository"
+
+       # Generate Service layer with business logic
+       - codegen service \
+           --repository "{{repository}}" \
+           --model "{{model}}" \
+           --package "{{config.package}}.service"
+
+       # Generate Controller with API endpoints
+       - codegen controller \
+           --service "{{service}}" \
+           --api-spec .cursor/resources/{{usecase}}/api-spec.mdc \
+           --package "{{config.package}}.controller"
+
+       # Generate tests
+       - codegen test \
+           --layers "controller,service,repository" \
+           --package "{{config.package}}"
+
+       # Format generated code
+       - codegen format --style google
+
+validation:
+  # Validate generated code
+  - codegen validate --all
+  # Run tests
+  - codegen test --run
+  # Check code style
+  - codegen lint

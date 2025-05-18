@@ -1,0 +1,53 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Create a pull request using GitHub CLI"
+inputs:
+  branch: "{{branch}}"        # Feature branch name
+  issue_key: "{{issue_key}}"  # Jira issue key
+  usecase: "{{usecase}}"      # Feature being developed
+  base: "main"                # Target branch for PR
+
+outputs:
+  pr_url: url  # URL of the created PR
+
+commands:
+  # Validate inputs
+  - if ([string]::IsNullOrEmpty("{{branch}}")) { throw "Branch name is required" }
+  - if ([string]::IsNullOrEmpty("{{issue_key}}")) { throw "Issue key is required" }
+  - if ([string]::IsNullOrEmpty("{{usecase}}")) { throw "Usecase is required" }
+  
+  # Prepare PR description
+  - $description = @"
+## [{{issue_key}}] {{usecase}}
+
+This PR implements {{usecase}}.
+
+### Changes
+- Initial implementation of the feature
+- Added unit tests
+- Updated documentation
+
+### Jira Issue
+[{{issue_key}}](mdc:${config.jira.url}/browse/{{issue_key}})
+
+### Checklist
+- [ ] Code follows project standards
+- [ ] Tests added and passing
+- [ ] Documentation updated
+- [ ] Code reviewed
+"@
+  
+  # Create PR using GitHub CLI
+  - try {
+      $response = gh pr create --base "{{base}}" --head "{{branch}}" --title "[{{issue_key}}] {{usecase}}" --body $description | Out-String
+      Write-Host "Created PR: $response"
+      @{ url = $response.Trim() }
+    } catch {
+      Write-Error "Failed to create PR: $_"
+      throw
+    }
+

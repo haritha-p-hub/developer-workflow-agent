@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+openapi: 3.0.0
+info:
+  title: Lead Time for Change API
+  version: 1.0.0
+  description: API for calculating and retrieving lead time for change metrics
+
+paths:
+  /api/v1/metrics/lead-time:
+    get:
+      summary: Calculate lead time for change metrics
+      description: Calculate lead time metrics for a given time range and team
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for analysis
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for analysis
+        - name: team
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Team name to filter metrics
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: weekly
+          description: Interval for aggregating metrics
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  averageLeadTime:
+                    type: number
+                    description: Average lead time in days
+                  metrics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        interval:
+                          type: string
+                          description: Time interval (date or week/month)
+                        leadTime:
+                          type: number
+                          description: Lead time in days
+                        changes:
+                          type: integer
+                          description: Number of changes in interval
+                  summary:
+                    type: object
+                    properties:
+                      totalChanges:
+                        type: integer
+                        description: Total number of changes
+                      minLeadTime:
+                        type: number
+                        description: Minimum lead time in days
+                      maxLeadTime:
+                        type: number
+                        description: Maximum lead time in days
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+

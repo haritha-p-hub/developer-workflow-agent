@@ -1,0 +1,8 @@
+---
+description: "Validate Elastic SQL query"
+inputs:
+  sql: "{{sql}}"
+outputs:
+  isValid: isValid
+commands:
+  - elastic validate --query "{{sql}}" --output isValid

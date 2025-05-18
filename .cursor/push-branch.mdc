@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Push branch to remote"
+inputs:
+  branch: "{{branch}}"
+commands:
+  - git push origin {{branch}}
+

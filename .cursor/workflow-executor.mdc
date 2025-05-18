@@ -1,0 +1,173 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# AI Workflow Executor
+
+## Overview
+---
+title: "Developer Agent Workflow Executor"
+description: "This MDC file guides AI assistants on how to execute the workflow.mdc file and all referenced MDC files in sequence"
+version: "1.0.0"
+---
+
+## How to Use
+---
+instructions: |
+  This file serves as a guide for AI assistants like Cursor and Copilot to execute the full developer workflow.
+  
+  To run the workflow:
+  1. Tell the AI assistant: "Execute the workflow starting from workflow-executor.mdc"
+  2. The AI will read workflow.mdc and identify the current step to execute
+  3. For each step, the AI will read the referenced MDC file(s)
+  4. The AI will maintain state between steps to preserve outputs from previous steps as inputs to subsequent steps
+  5. The workflow continues until all steps are complete
+  6. **At each step, if a required input is missing, the AI assistant must prompt the user to provide the input before proceeding.**
+
+## Prerequisite: Load Secrets
+---
+Before running the workflow, load environment variables from your secrets file:
+
+```powershell
+pwsh ./load-secrets.ps1
+```
+
+This will set all required secrets (Jira, GitHub, etc.) for your session. Do not commit your secrets file to version control
+---
+
+## Workflow Execution Process
+---
+process: |
+  1. Read workflow.mdc to understand all steps
+  2. For each step:
+     a. Check if step requires user input
+     b. If needed, ask user for required inputs
+     c. Read the referenced MDC file(s)
+     d. Execute the operations defined in the MDC file
+     e. Store outputs for use in subsequent steps
+     f. Confirm completion before moving to next step
+  3. At the end of the workflow, summarize what was accomplished
+---
+
+## State Management
+---
+state_management: |
+  The AI assistant will maintain the following state throughout the workflow:
+  
+  ```json
+  {
+    "current_step": 1,
+    "project_key": "SCRUM",
+    "developer": "",
+    "usecase": "",
+    "requirements": "",
+    "issue_key": "",
+    "branch_name": "",
+    "api_spec": {},
+    "elastic_query": {},
+    "implementation_files": []
+  }
+  ```
+  
+  Each step will update this state with its outputs, which can then be used as inputs for subsequent steps.
+---
+
+## Execute Workflow Steps
+---
+execution_steps: |
+  The specific execution steps based on workflow.mdc are:
+  
+  1. Create Jira issue (create-jira-issue.mdc)
+     - Inputs: developer, usecase, requirements
+     - Outputs: issue_key
+  
+  2. Build API spec (build-api-template.mdc)
+     - Inputs: usecase, requirements
+     - Outputs: api_spec
+  
+  3. Build Elastic query (build-elastic-query.mdc)
+     - Inputs: api_spec
+     - Outputs: elastic_query
+  
+  4. Generate code (generate-code.mdc)
+     - Inputs: api_spec, elastic_query, requirements
+     - Outputs: implementation_files
+  
+  5. Create Git branch (create-git-branch.mdc)
+     - Inputs: issue_key
+     - Outputs: branch_name
+  
+  6. Commit code (commit-code.mdc)
+     - Inputs: branch_name, implementation_files, issue_key
+     - Outputs: commit_id
+  
+  7. Push changes (push-branch.mdc)
+     - Inputs: branch_name
+     - Outputs: push_result
+  
+  8. Create PR (create-pr.mdc)
+     - Inputs: branch_name, issue_key, usecase
+     - Outputs: pr_url
+  
+  9. Add Jira comment (add-jira-comment.mdc)
+     - Inputs: issue_key, pr_url
+     - Outputs: comment_id
+  
+  10. Transition Jira issue (transition-jira-issue.mdc)
+     - Inputs: issue_key, transition_name
+     - Outputs: success
+---
+
+## Error Handling
+---
+error_handling: |
+  If an error occurs during any step:
+  
+  1. The AI will explain the specific error with details:
+     - Step that failed
+     - Input values that caused the error
+     - Error message and stacktrace
+  
+  2. Suggestions for resolution:
+     - Check input values
+     - Verify Jira/Github credentials
+     - Review API specifications
+     - Check file paths
+  
+  3. Recovery options:
+     - Retry the step with corrected inputs
+     - Skip to the next step (recording the failure)
+     - Modify the MDC file to fix issues
+     - Abort the workflow
+  
+  4. Resuming the workflow:
+     - State will be preserved across retries
+     - Steps that were successful won't need to be repeated
+---
+
+## Debugging
+---
+debugging: |
+  For troubleshooting issues in the workflow:
+  
+  1. Enable verbose logging:
+     - Add detailed Write-Host statements in MDC files
+     - Capture all API responses for review
+  
+  2. Review MDC file structure:
+     - Check for correct YAML formatting
+     - Verify that all referenced variables are available
+  
+  3. Test individual steps:
+     - Run single MDC files directly
+     - Validate outputs before continuing
+  
+  4. Check external services:
+     - Verify Jira connectivity
+     - Check GitHub repository access
+     - Test API endpoints manually
+---
+
+
+

@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## Prerequisite: Load Secrets
+---
+Before running the workflow, load environment variables from your secrets file:
+
+```powershell
+. .\load-secrets.ps1
+```
+
+This will set all required secrets (Jira, GitHub, etc.) for your session. Do not commit your secrets file to version control
+---
+

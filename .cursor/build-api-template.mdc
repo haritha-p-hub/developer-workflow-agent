@@ -1,0 +1,190 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Generate API specification from requirement details"
+inputs:
+  endpoint: "{{endpoint}}"         # API endpoint path
+  method: "{{method}}"            # HTTP method (GET, POST, etc.)
+  path_params: "{{path_params}}"  # Path parameters if any
+  query_params: "{{query_params}}" # Query parameters if any
+  request_body: "{{request_body}}" # Request body schema if needed
+  response: "{{response}}"        # Expected response structure
+  index: "{{index}}"             # Elasticsearch index to query
+  usecase: "{{usecase}}"          # Feature being developed
+  requirements: "{{requirements}}" # Detailed requirements
+
+outputs:
+  api_spec: api-spec.mdc         # Generated API specification
+  query_spec: elastic-query.mdc  # Generated Elasticsearch query
+
+commands:
+  # Generate API spec from requirements
+  - template generate-api \
+      --endpoint "{{endpoint}}" \
+      --method "{{method}}" \
+      --path-params "{{path_params}}" \
+      --query-params "{{query_params}}" \
+      --request-body "{{request_body}}" \
+      --response "{{response}}" \
+      --output .cursor/resources/{{usecase}}/api-spec.mdc
+
+  # Generate Elasticsearch query based on API spec
+  - query generate \
+      --api-spec .cursor/resources/{{usecase}}/api-spec.mdc \
+      --index "{{index}}" \
+      --output .cursor/resources/{{usecase}}/elastic-query.mdc
+
+  # Parse requirements and generate API spec
+  - $usecaseFolder = ".cursor/resources/{{usecase}}"
+  - if (!(Test-Path $usecaseFolder)) { New-Item -ItemType Directory -Path $usecaseFolder }
+  - $apiSpec = @"
+openapi: 3.0.0
+info:
+  title: Lead Time for Change API
+  version: 1.0.0
+  description: API for calculating and retrieving lead time for change metrics
+
+paths:
+  /api/v1/metrics/lead-time:
+    get:
+      summary: Calculate lead time for change metrics
+      description: Calculate lead time metrics for a given time range and team
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for analysis
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for analysis
+        - name: team
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Team name to filter metrics
+        - name: interval
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: weekly
+          description: Interval for aggregating metrics
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  averageLeadTime:
+                    type: number
+                    description: Average lead time in days
+                  metrics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        interval:
+                          type: string
+                          description: Time interval (date or week/month)
+                        leadTime:
+                          type: number
+                          description: Lead time in days
+                        changes:
+                          type: integer
+                          description: Number of changes in interval
+                  summary:
+                    type: object
+                    properties:
+                      totalChanges:
+                        type: integer
+                        description: Total number of changes
+                      minLeadTime:
+                        type: number
+                        description: Minimum lead time in days
+                      maxLeadTime:
+                        type: number
+                        description: Maximum lead time in days
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+"@
+
+  # Write API spec to file
+  - Set-Content -Path "$usecaseFolder/api-spec.mdc" -Value $apiSpec
+  - Write-Host "Generated API specification for lead time for change metrics at $usecaseFolder/api-spec.mdc"
+
+validation:
+  # Validate generated specs
+  - template validate --file api-spec.mdc
+  - query validate --file elastic-query.mdc
+
+examples:
+  # Example 1: Deployment Frequency
+  requirements: |
+    Feature: Deployment Frequency Analysis
+    Endpoint: /api/v1/metrics/deployment-frequency
+    Method: GET
+    Description: Calculate deployment frequency metrics
+    
+    Input Parameters:
+    - Start Date (required): Date range start
+    - End Date (required): Date range end
+    - Team Name (optional): Filter by team
+    
+    Expected Output:
+    - Frequency: Average deployments per day
+    - Deployments: List of deployment details
+    - Trend: Daily deployment counts
+    
+    Data Source:
+    - Index: deployments
+    - Fields: timestamp, team, status, environment
+    - Filter: status = success
+
+  # Example 2: Lead Time
+  requirements: |
+    Feature: Lead Time Analysis
+    Endpoint: /api/v1/metrics/lead-time
+    Method: GET
+    Description: Calculate lead time metrics
+    
+    Input Parameters:
+    - Start Date (required): Analysis period start
+    - End Date (required): Analysis period end
+    - Project (optional): Filter by project
+    
+    Expected Output:
+    - Average: Mean lead time in days
+    - Details: List of PR to deployment times
+    - Timeline: Daily lead time trend
+    
+    Data Source:
+    - Index: pull_requests
+    - Fields: created_at, merged_at, deployed_at, project
+    - Calculation: deployed_at - created_at
+
+
+
+
+
+

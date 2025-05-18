@@ -1,0 +1,36 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Dynamic API specification generator"
+inputs:
+  requirement: "{{requirement}}"   # Natural language description of what you want to achieve
+  index: "{{index}}"              # Target Elasticsearch index
+
+outputs:
+  api_spec: api-spec.mdc          # Generated OpenAPI specification
+  query_spec: elastic-query.mdc    # Generated Elasticsearch query
+
+commands:
+  # Analyze requirement and generate API spec
+  - api analyze \
+      --requirement "{{requirement}}" \
+      --index "{{index}}" \
+      --output api-spec.mdc
+
+  # Generate Elasticsearch query based on API spec
+  - query generate \
+      --api-spec api-spec.mdc \
+      --index "{{index}}" \
+      --output elastic-query.mdc
+
+validation:
+  # Validate generated specs
+  - api validate --file api-spec.mdc
+  - query validate --file elastic-query.mdc
+
+
+
+

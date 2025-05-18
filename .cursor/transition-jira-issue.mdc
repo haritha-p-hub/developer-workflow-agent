@@ -1,0 +1,93 @@
+---
+description: "Transition Jira issue status"
+globs: 
+alwaysApply: false
+---
+---
+description: "Transition a Jira issue to a different status"
+inputs:
+  issue_key: "{{issue_key}}"     # The Jira issue key (e.g., BTS-123)
+  transition_name: "{{transition_name}}"  # The name of the transition (e.g., "In Progress", "Done")
+  comment: "{{comment}}"         # Optional comment to add with the transition
+
+outputs:
+  success: true  # Whether the transition was successful
+
+commands:
+  # Validate inputs
+  - $ErrorActionPreference = "Stop"
+  - if ([string]::IsNullOrEmpty("{{issue_key}}")) { throw "Issue key is required" }
+  - if ([string]::IsNullOrEmpty("{{transition_name}}")) { throw "Transition name is required" }
+  
+  # Setup authentication
+  - Write-Host "Setting up authentication for Jira API..."
+  - $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("${env:JIRA_EMAIL}:${env:JIRA_TOKEN}")))
+  - $Headers = @{ 
+      Authorization = "Basic $base64AuthInfo"
+      "Content-Type" = "application/json"
+    }
+  
+  # Get available transitions
+  - try {
+      Write-Host "Getting available transitions for issue {{issue_key}}..."
+      $transitionsResponse = Invoke-RestMethod -Uri "${config.jira.url}/rest/api/2/issue/{{issue_key}}/transitions" -Method Get -Headers $Headers
+      
+      Write-Host "Available transitions:"
+      foreach ($t in $transitionsResponse.transitions) {
+        Write-Host "  - $($t.name) (ID: $($t.id))"
+      }
+      
+      $transition = $transitionsResponse.transitions | Where-Object { $_.name -eq "{{transition_name}}" }
+      
+      if ($null -eq $transition) {
+          Write-Error "Transition '{{transition_name}}' not found for issue {{issue_key}}"
+          Write-Host "Available transitions: $($transitionsResponse.transitions.name -join ', ')"
+          throw "Transition not found"
+      }
+      
+      Write-Host "Found transition ID: $($transition.id) for '{{transition_name}}'"
+      
+      # Prepare transition payload
+      $transitionBody = @{
+          transition = @{
+              id = $transition.id
+          }
+      }
+      
+      # Add comment if provided
+      if (-not [string]::IsNullOrEmpty("{{comment}}")) {
+          Write-Host "Adding comment to transition: {{comment}}"
+          $transitionBody.update = @{
+              comment = @(
+                  @{
+                      add = @{
+                          body = "{{comment}}"
+                      }
+                  }
+              )
+          }
+      }
+      
+      $jsonBody = $transitionBody | ConvertTo-Json -Depth 10
+      Write-Host "Sending transition request..."
+      
+      # Perform transition
+      Invoke-RestMethod -Uri "${config.jira.url}/rest/api/2/issue/{{issue_key}}/transitions" -Method Post -Headers $Headers -Body $jsonBody
+      
+      Write-Host "Successfully transitioned issue {{issue_key}} to {{transition_name}}"
+      @{ success = $true }
+    }
+    catch {
+      Write-Error "Failed to transition issue: $_"
+      Write-Host "Response Status Code: $($_.Exception.Response.StatusCode.value__)"
+      try {
+        $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+        $reader.BaseStream.Position = 0
+        $reader.DiscardBufferedData()
+        $responseBody = $reader.ReadToEnd()
+        Write-Host "Error Response: $responseBody"
+      } catch {
+        Write-Host "Unable to read error response: $_"
+      }
+      @{ success = $false; error = $_.Exception.Message }
+    }

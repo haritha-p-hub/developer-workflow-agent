@@ -1,0 +1,4 @@
+execute-workflow.ps1
+.cursor/config.mdc
+create-jira-issue.ps1
+application-secrets.properties

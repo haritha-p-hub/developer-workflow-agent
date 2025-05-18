@@ -1,0 +1,49 @@
+---
+description: "Dynamically build Elastic SQL based on use case intent"
+globs: 
+alwaysApply: false
+---
+description: "Generate and validate Elasticsearch queries based on API requirements"
+inputs:
+  api_spec: "{{api_spec}}"      # Reference to api-spec.mdc
+  usecase: "{{usecase}}"        # Feature being developed
+  index: "{{index}}"            # Target Elasticsearch index
+
+outputs:
+  elastic_query: .cursor/resources/{{usecase}}/elastic-query.mdc     # Elasticsearch DSL query for generate-code.mdc
+  sql_query: .cursor/resources/{{usecase}}/sql-query.mdc             # SQL query for validation
+
+steps:
+  1. Parse API spec and requirements
+     - Extract query requirements from api-spec.mdc
+     - Identify required fields and aggregations
+     - Determine query type and structure
+
+  2. Generate and validate queries
+     commands:
+       # Ensure usecase folder exists
+       - $usecaseFolder = ".cursor/resources/{{usecase}}"
+       - if (!(Test-Path $usecaseFolder)) { New-Item -ItemType Directory -Path $usecaseFolder }
+       # Generate Elasticsearch DSL query
+       - query elastic-dsl \
+           --api-spec "{{api_spec}}" \
+           --usecase "{{usecase}}" \
+           --index "{{index}}" \
+           --output $usecaseFolder/elastic-query.mdc
+
+       # Generate SQL query for validation
+       - query sql \
+           --api-spec "{{api_spec}}" \
+           --usecase "{{usecase}}" \
+           --index "{{index}}" \
+           --output $usecaseFolder/sql-query.mdc
+
+       # Validate both queries produce same results
+       - query validate-results \
+           --elastic-query $usecaseFolder/elastic-query.mdc \
+           --sql-query $usecaseFolder/sql-query.mdc \
+           --index "{{index}}"
+
+  3. Prepare for code generation
+     - Ensure query is compatible with RepositoryImpl pattern
+     - Format query for generate-code.mdc consumption

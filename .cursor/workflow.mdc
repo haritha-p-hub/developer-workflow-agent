@@ -1,0 +1,35 @@
+---
+description: "Deployment Frequency Developer Workflow"
+globs: 
+alwaysApply: false
+---
+---
+description: "Execute GitHub workflow with Jira integration"
+inputs:
+  developer: "{{developer}}"  # Developer assigned to the task
+  usecase: "{{usecase}}"     # Feature being developed (e.g., "Add Login", "User Dashboard", "Payment Integration")
+  requirements: "{{requirements}}" # Detailed requirements for code generation
+
+steps:
+  1. Create Jira issue (create-jira-issue.mdc) -> outputs issue_key
+  2. Generate API and Query Specs
+     - Build API spec (build-api-template.mdc -> api-spec.mdc)
+     - Build Elastic query (build-elastic-query.mdc -> elastic-query.mdc)
+  3. Generate Code
+     - Generate all layers (generate-code.mdc)
+     - Validate generated code
+  4. Create Git branch (create-git-branch.mdc) # Branch will be created as AIA-{issue_key}
+  5. Add and commit generated code (commit-code.mdc)
+  6. Push changes (push-branch.mdc)
+  7. Create pull request (create-pr.mdc)
+  8. Add Jira comment (add-jira-comment.mdc)
+  9. Transition Jira issue (transition-jira-issue.mdc)
+
+validation:
+  # Validate requirements format
+  - validate requirements --format
+  # Validate generated code
+  - validate code --all
+  # Check if all files are committed
+  - validate git --status
+

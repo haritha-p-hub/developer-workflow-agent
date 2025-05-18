@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Commit generated code to the feature branch"
+inputs:
+  issue_key: "{{issue_key}}"  # Jira issue key
+  usecase: "{{usecase}}"      # Feature being developed
+
+outputs:
+  commit_hash: hash           # Hash of the commit
+
+commands:
+  # Stage all new, modified, and deleted files
+  - git add .
+
+  # Commit with structured message
+  - git commit -m "[{{issue_key}}] Generate code for {{usecase}}
+
+    Generated code includes:
+    - API Specification
+    - Elasticsearch Query
+    - Entity Classes
+    - Model Classes
+    - Repository Layer
+    - Service Layer
+    - Controller Layer
+    - Unit Tests"
+
+validation:
+  # Check if all generated files are staged
+  - git status --porcelain
+  # Validate commit message format
+  - git log -1 --pretty=format:"%s"
+

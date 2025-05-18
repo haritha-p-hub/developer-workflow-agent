@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Create a Jira issue (use with --set title=X --set description=Y)"
+inputs:
+  title:
+    description: "Issue title/summary"
+    prompt: "Enter the issue title"
+    default: "Default Title"
+  description:
+    description: "Issue description"
+    prompt: "Enter the issue description"
+    default: "Default Description"
+  project:
+    description: "Jira project key"
+    prompt: "Enter the Jira project key"
+    default: "SCRUM"
+  issuetype:
+    description: "Issue type"
+    prompt: "Enter the issue type"
+    default: "Task"
+  usecase:
+    description: "Use case"
+    prompt: "Enter the use case"
+    default: "Default Use Case"
+outputs:
+  issue_key: ""
+commands:
+  - |
+    # Call the external PowerShell script
+    $title = "{{title}}"
+    $description = "{{description}}"
+    $project = "{{project}}"
+    $issuetype = "{{issuetype}}"
+    $usecase = "{{usecase}}"
+    $issueKey = & ./create-jira-issue.ps1 -title $title -description $description -project $project -issuetype $issuetype -usecase $usecase
+    if ($LASTEXITCODE -eq 0) {
+      Write-Host "Success! Created issue: $issueKey" -ForegroundColor Green
+      @{ issue_key = $issueKey }
+    } else {
+      Write-Host "Failed to create Jira issue." -ForegroundColor Red
+      @{ issue_key = "" }
+    }

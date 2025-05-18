@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+{
+  "size": 0,
+  "query": {
+    "bool": {
+      "filter": [
+        { "range": { "deployed_at": { "gte": "{{startDate}}", "lte": "{{endDate}}" } } },
+        { "term": { "team": "{{team}}" } }
+      ]
+    }
+  },
+  "aggs": {
+    "intervals": {
+      "date_histogram": {
+        "field": "deployed_at",
+        "calendar_interval": "{{interval}}"
+      },
+      "aggs": {
+        "lead_time": {
+          "avg": {
+            "script": {
+              "source": "(doc['deployed_at'].value.toInstant().toEpochMilli() - doc['created_at'].value.toInstant().toEpochMilli()) / 86400000.0"
+            }
+          }
+        },
+        "changes": { "value_count": { "field": "_id" } }
+      }
+    },
+    "summary": {
+      "stats": {
+        "script": {
+          "source": "(doc['deployed_at'].value.toInstant().toEpochMilli() - doc['created_at'].value.toInstant().toEpochMilli()) / 86400000.0"
+        }
+      }
+    }
+  }
+}
+

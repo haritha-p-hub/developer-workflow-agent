@@ -1,0 +1,57 @@
+---
+description: "Create a Git feature branch"
+globs: 
+alwaysApply: false
+---
+---
+description: "Create a new git branch using Git commands"
+inputs:
+  issue_key: "{{issue_key}}"  # Jira issue key from previous step (e.g., BTS-123)
+  branch_type: "{{branch_type}}" # Type of branch (feature, bugfix, hotfix)
+  base: "main"  # Base branch to create from
+
+outputs:
+  branch: branch  # Will be in format {branch_type}/AIA-{issue_key}
+
+commands:
+  # Validate inputs
+  - if ([string]::IsNullOrEmpty("{{issue_key}}")) { throw "Issue key is required" }
+  - if ([string]::IsNullOrEmpty("{{branch_type}}")) { $branch_type = "feature" } else { $branch_type = "{{branch_type}}" }
+  
+  # Check if repository exists locally
+  - try {
+      if (-not (Test-Path -Path "${config.github.repo}" -PathType Container)) {
+        Write-Host "Cloning repository..."
+        git clone https://github.com/${config.github.owner}/${config.github.repo}.git
+      }
+      
+      # Navigate to repo directory
+      cd ${config.github.repo}
+      
+      # Make sure we have the latest changes
+      git fetch origin
+      
+      # Check if branch already exists locally
+      $branchExists = git branch --list "$branch_type/AIA-{{issue_key}}"
+      if ($branchExists) {
+        Write-Host "Branch '$branch_type/AIA-{{issue_key}}' already exists locally"
+        git checkout "$branch_type/AIA-{{issue_key}}"
+        $branch = "$branch_type/AIA-{{issue_key}}"
+      } else {
+        # Check out base branch and update it
+        git checkout {{base}}
+        git pull origin {{base}}
+        
+        # Create and checkout new branch
+        git checkout -b "$branch_type/AIA-{{issue_key}}"
+        git push -u origin "$branch_type/AIA-{{issue_key}}"
+        $branch = "$branch_type/AIA-{{issue_key}}"
+      }
+      
+      Write-Host "Using branch: $branch"
+      @{ branch = $branch }
+    }
+    catch {
+      Write-Error "Failed to create git branch: $_"
+      throw
+    }
