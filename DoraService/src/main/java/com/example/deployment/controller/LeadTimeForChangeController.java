@@ -14,19 +14,26 @@ import java.util.List;
 @RequestMapping("/api/v1/lead-time")
 @RequiredArgsConstructor
 public class LeadTimeForChangeController {
-
+    
     private final LeadTimeForChangeService service;
-
+    
     @PostMapping("/calculate")
     public ResponseEntity<LeadTimeForChange> calculateLeadTime(@RequestBody LeadTimeForChange request) {
         return ResponseEntity.ok(service.calculateLeadTime(request));
     }
-
+    
     @GetMapping("/team/{team}")
     public ResponseEntity<List<LeadTimeForChange>> getTeamLeadTime(@PathVariable String team) {
         return ResponseEntity.ok(service.getTeamLeadTime(team));
     }
-
+    
+    @GetMapping("/team/{team}/interval/{interval}")
+    public ResponseEntity<List<LeadTimeForChange>> getTeamLeadTimeByInterval(
+            @PathVariable String team,
+            @PathVariable String interval) {
+        return ResponseEntity.ok(service.getTeamLeadTimeByInterval(team, interval));
+    }
+    
     @GetMapping("/team/{team}/range")
     public ResponseEntity<List<LeadTimeForChange>> getTeamLeadTimeInDateRange(
             @PathVariable String team,
@@ -34,7 +41,7 @@ public class LeadTimeForChangeController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         return ResponseEntity.ok(service.getTeamLeadTimeInDateRange(team, startDate, endDate));
     }
-
+    
     @GetMapping("/team/{team}/average")
     public ResponseEntity<Double> calculateAverageLeadTime(
             @PathVariable String team,
