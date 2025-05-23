@@ -19,27 +19,15 @@ public class LeadTimeForChangeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "team_id", nullable = false)
-    private String teamId;
+    @Column(name = "team", nullable = false)
+    private String team;
     
-    @Column(name = "team_name", nullable = false)
-    private String teamName;
+    @Column(name = "created_date", nullable = false)
+    private LocalDateTime createdDate;
     
-    @Column(name = "commit_time", nullable = false)
-    private LocalDateTime commitTime;
+    @Column(name = "deployed_date", nullable = false)
+    private LocalDateTime deployedDate;
     
-    @Column(name = "deployment_time", nullable = false)
-    private LocalDateTime deploymentTime;
-    
-    @Column(name = "lead_time_in_hours", nullable = false)
-    private long leadTimeInHours;
-    
-    @Column(name = "commit_id", nullable = false)
-    private String commitId;
-    
-    @Column(name = "deployment_id", nullable = false)
-    private String deploymentId;
-    
-    @Column(name = "status", nullable = false)
-    private String status;
+    @Column(name = "lead_time_hours", nullable = false)
+    private double leadTimeHours;
 } 

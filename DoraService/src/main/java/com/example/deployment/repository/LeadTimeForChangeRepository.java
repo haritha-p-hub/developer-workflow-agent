@@ -12,14 +12,14 @@ import java.util.List;
 @Repository
 public interface LeadTimeForChangeRepository extends JpaRepository<LeadTimeForChangeEntity, Long> {
     
-    List<LeadTimeForChangeEntity> findByTeamId(String teamId);
+    List<LeadTimeForChangeEntity> findByTeam(String team);
     
-    List<LeadTimeForChangeEntity> findByTeamIdAndCommitTimeBetween(
-            String teamId, LocalDateTime startDate, LocalDateTime endDate);
+    List<LeadTimeForChangeEntity> findByTeamAndCreatedDateBetween(
+            String team, LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query("SELECT AVG(l.leadTimeInHours) FROM LeadTimeForChangeEntity l WHERE l.teamId = :teamId AND l.commitTime BETWEEN :startDate AND :endDate")
+    @Query("SELECT AVG(l.leadTimeHours) FROM LeadTimeForChangeEntity l WHERE l.team = :team AND l.createdDate BETWEEN :startDate AND :endDate")
     Double calculateAverageLeadTime(
-            @Param("teamId") String teamId,
+            @Param("team") String team,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 } 

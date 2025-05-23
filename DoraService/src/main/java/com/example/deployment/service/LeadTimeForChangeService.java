@@ -17,74 +17,46 @@ public class LeadTimeForChangeService {
 
     private final LeadTimeForChangeRepository repository;
 
-    public LeadTimeForChange saveLeadTimeForChange(LeadTimeForChange leadTimeForChange) {
-        LeadTimeForChangeEntity entity = mapToEntity(leadTimeForChange);
+    public LeadTimeForChange calculateLeadTime(LeadTimeForChange request) {
+        double leadTimeHours = ChronoUnit.HOURS.between(
+                request.getCreatedDate(),
+                request.getDeployedDate()
+        );
+
+        LeadTimeForChangeEntity entity = LeadTimeForChangeEntity.builder()
+                .team(request.getTeam())
+                .createdDate(request.getCreatedDate())
+                .deployedDate(request.getDeployedDate())
+                .leadTimeHours(leadTimeHours)
+                .build();
+
         LeadTimeForChangeEntity savedEntity = repository.save(entity);
         return mapToModel(savedEntity);
     }
 
-    public List<LeadTimeForChange> getLeadTimeForChangeByTeamId(String teamId) {
-        return repository.findByTeamId(teamId)
-                .stream()
+    public List<LeadTimeForChange> getTeamLeadTime(String team) {
+        return repository.findByTeam(team).stream()
                 .map(this::mapToModel)
                 .collect(Collectors.toList());
     }
 
-    public List<LeadTimeForChange> getLeadTimeForChangeByTeamIdAndDateRange(
-            String teamId, LocalDateTime startDate, LocalDateTime endDate) {
-        return repository.findByTeamIdAndCommitTimeBetween(teamId, startDate, endDate)
-                .stream()
+    public List<LeadTimeForChange> getTeamLeadTimeInDateRange(
+            String team, LocalDateTime startDate, LocalDateTime endDate) {
+        return repository.findByTeamAndCreatedDateBetween(team, startDate, endDate).stream()
                 .map(this::mapToModel)
                 .collect(Collectors.toList());
     }
 
-    public Double calculateAverageLeadTime(String teamId, LocalDateTime startDate, LocalDateTime endDate) {
-        return repository.calculateAverageLeadTime(teamId, startDate, endDate);
-    }
-
-    public LeadTimeForChange calculateAndSaveLeadTime(
-            String teamId, String teamName, String commitId, LocalDateTime commitTime,
-            String deploymentId, LocalDateTime deploymentTime, String status) {
-        
-        long leadTimeInHours = ChronoUnit.HOURS.between(commitTime, deploymentTime);
-        
-        LeadTimeForChange leadTimeForChange = LeadTimeForChange.builder()
-                .teamId(teamId)
-                .teamName(teamName)
-                .commitId(commitId)
-                .commitTime(commitTime)
-                .deploymentId(deploymentId)
-                .deploymentTime(deploymentTime)
-                .leadTimeInHours(leadTimeInHours)
-                .status(status)
-                .build();
-        
-        return saveLeadTimeForChange(leadTimeForChange);
-    }
-
-    private LeadTimeForChangeEntity mapToEntity(LeadTimeForChange model) {
-        return LeadTimeForChangeEntity.builder()
-                .teamId(model.getTeamId())
-                .teamName(model.getTeamName())
-                .commitTime(model.getCommitTime())
-                .deploymentTime(model.getDeploymentTime())
-                .leadTimeInHours(model.getLeadTimeInHours())
-                .commitId(model.getCommitId())
-                .deploymentId(model.getDeploymentId())
-                .status(model.getStatus())
-                .build();
+    public Double calculateAverageLeadTime(String team, LocalDateTime startDate, LocalDateTime endDate) {
+        return repository.calculateAverageLeadTime(team, startDate, endDate);
     }
 
     private LeadTimeForChange mapToModel(LeadTimeForChangeEntity entity) {
         return LeadTimeForChange.builder()
-                .teamId(entity.getTeamId())
-                .teamName(entity.getTeamName())
-                .commitTime(entity.getCommitTime())
-                .deploymentTime(entity.getDeploymentTime())
-                .leadTimeInHours(entity.getLeadTimeInHours())
-                .commitId(entity.getCommitId())
-                .deploymentId(entity.getDeploymentId())
-                .status(entity.getStatus())
+                .team(entity.getTeam())
+                .createdDate(entity.getCreatedDate())
+                .deployedDate(entity.getDeployedDate())
+                .leadTimeHours(entity.getLeadTimeHours())
                 .build();
     }
 } 

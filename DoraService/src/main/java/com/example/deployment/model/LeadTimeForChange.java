@@ -12,12 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LeadTimeForChange {
-    private String teamId;
-    private String teamName;
-    private LocalDateTime commitTime;
-    private LocalDateTime deploymentTime;
-    private long leadTimeInHours;
-    private String commitId;
-    private String deploymentId;
-    private String status;
+    private String team;
+    private LocalDateTime createdDate;
+    private LocalDateTime deployedDate;
+    private double leadTimeHours;
 } 
