@@ -1,8 +1,11 @@
 package com.example.deployment.service;
 
-import com.example.deployment.model.LeadTimeMetrics;
-import java.time.LocalDate;
+import com.example.deployment.entity.LeadTime;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface LeadTimeService {
-    LeadTimeMetrics getLeadTimeMetrics(LocalDate startDate, LocalDate endDate, String team, String interval);
+    List<LeadTime> getLeadTimeForTeam(String team, LocalDateTime startDate, LocalDateTime endDate);
+    LeadTime saveLeadTime(LeadTime leadTime);
+    List<LeadTime> getAllLeadTimes();
 } 

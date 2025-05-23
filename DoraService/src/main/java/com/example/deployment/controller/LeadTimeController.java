@@ -1,29 +1,40 @@
 package com.example.deployment.controller;
 
-import com.example.deployment.model.LeadTimeMetrics;
+import com.example.deployment.entity.LeadTime;
 import com.example.deployment.service.LeadTimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/metrics")
+@RequestMapping("/api/v1/lead-time")
 public class LeadTimeController {
 
-    @Autowired
-    private LeadTimeService leadTimeService;
+    private final LeadTimeService leadTimeService;
 
-    @GetMapping("/lead-time")
-    public ResponseEntity<LeadTimeMetrics> getLeadTimeMetrics(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam String team,
-            @RequestParam(defaultValue = "daily") String interval) {
-        
-        LeadTimeMetrics metrics = leadTimeService.getLeadTimeMetrics(startDate, endDate, team, interval);
-        return ResponseEntity.ok(metrics);
+    @Autowired
+    public LeadTimeController(LeadTimeService leadTimeService) {
+        this.leadTimeService = leadTimeService;
+    }
+
+    @GetMapping("/team/{team}")
+    public ResponseEntity<List<LeadTime>> getLeadTimeForTeam(
+            @PathVariable String team,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(leadTimeService.getLeadTimeForTeam(team, startDate, endDate));
+    }
+
+    @PostMapping
+    public ResponseEntity<LeadTime> createLeadTime(@RequestBody LeadTime leadTime) {
+        return ResponseEntity.ok(leadTimeService.saveLeadTime(leadTime));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<LeadTime>> getAllLeadTimes() {
+        return ResponseEntity.ok(leadTimeService.getAllLeadTimes());
     }
 } 
