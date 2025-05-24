@@ -1,31 +1,52 @@
 package com.example.deployment.controller;
 
-import com.example.deployment.dto.LeadTimeForChangeDTO;
+import com.example.deployment.model.LeadTimeForChangeModel;
 import com.example.deployment.service.LeadTimeForChangeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/lead-time")
+@RequestMapping("/api/v1/lead-time")
+@RequiredArgsConstructor
 public class LeadTimeForChangeController {
 
-    @Autowired
-    private LeadTimeForChangeService service;
+    private final LeadTimeForChangeService service;
 
-    @GetMapping
-    public ResponseEntity<List<LeadTimeForChangeDTO>> getLeadTimes(
-            @RequestParam String team,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String interval
-    ) {
-        List<LeadTimeForChangeDTO> leadTimes = service.getLeadTimes(team, startDate, endDate, interval);
-        return ResponseEntity.ok(leadTimes);
+    @PostMapping("/calculate")
+    public ResponseEntity<LeadTimeForChangeModel> calculateLeadTime(@RequestBody LeadTimeForChangeModel request) {
+        return ResponseEntity.ok(service.calculateLeadTime(request));
+    }
+
+    @GetMapping("/team/{team}")
+    public ResponseEntity<List<LeadTimeForChangeModel>> getTeamLeadTime(@PathVariable String team) {
+        return ResponseEntity.ok(service.getTeamLeadTime(team));
+    }
+
+    @GetMapping("/team/{team}/interval/{interval}")
+    public ResponseEntity<List<LeadTimeForChangeModel>> getTeamLeadTimeByInterval(
+            @PathVariable String team,
+            @PathVariable String interval) {
+        return ResponseEntity.ok(service.getTeamLeadTimeByInterval(team, interval));
+    }
+
+    @GetMapping("/team/{team}/range")
+    public ResponseEntity<List<LeadTimeForChangeModel>> getTeamLeadTimeInDateRange(
+            @PathVariable String team,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(service.getTeamLeadTimeInDateRange(team, startDate, endDate));
+    }
+
+    @GetMapping("/team/{team}/average")
+    public ResponseEntity<Double> calculateAverageLeadTime(
+            @PathVariable String team,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(service.calculateAverageLeadTime(team, startDate, endDate));
     }
 } 
